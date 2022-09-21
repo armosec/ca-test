@@ -12,13 +12,6 @@ type RequestHandler func(w http.ResponseWriter, r *http.Request, reqBody string)
 
 type RequestHandlerOption func(opts *requestHandlerOptions) error
 
-var WithTest = func(t *testing.T) RequestHandlerOption {
-	return func(o *requestHandlerOptions) error {
-		o.t = t
-		return nil
-	}
-}
-
 //WithMethod option sets the method for the handler
 var WithMethod = func(method string) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
@@ -91,10 +84,10 @@ var WithRequestNumber = func(reqNum int) RequestHandlerOption {
 }
 
 //WithUpdateExpected option sets the update expected flag for the handler
-var WithUpdateExpected = func(updateExpected bool, expectedRequest []byte, expectedRequestFile string) RequestHandlerOption {
+var WithTestRequest = func(t *testing.T, updateExpected bool, expectedRequest []byte, expectedRequestFile string) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
-		if updateExpected && (expectedRequest == nil || expectedRequestFile == "") {
-			return fmt.Errorf("to set update expected to true expected request and expected request file must be provided")
+		if expectedRequest == nil || expectedRequestFile == "" || t == nil {
+			return fmt.Errorf("test, expected request and expected request file must be provided")
 		}
 		o.updateExpected = updateExpected
 		o.expectedRequest = expectedRequest
