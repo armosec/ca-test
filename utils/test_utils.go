@@ -129,26 +129,16 @@ func lessInterfaceSlice(a, b interface{}) (less bool, ok bool) {
 	return false, true
 }
 
-/*
-func lessMapStr2Str(a, b interface{}) (less bool, ok bool) {
-	mapA, okA := a.(map[string]string)
-	mapB, okB := b.(map[string]string)
-	if !okA || !okB {
-		return false, false
-	}
-	if len(mapA) != len(mapB) {
-		return false, true
-	}
-
-	return true, true
-}*/
-
 func lessMapStr2Interface(a, b interface{}) (bool, bool) {
 	mapA, okA := a.(map[string]interface{})
 	mapB, okB := b.(map[string]interface{})
 
 	if !okA || !okB {
 		return false, false
+	}
+
+	if len(mapA) != len(mapB) {
+		return len(mapA) < len(mapB), true
 	}
 
 	keysA := make([]string, 0, len(mapA))
