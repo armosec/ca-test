@@ -111,11 +111,10 @@ func addIndicesHandlers(t *testing.T, esOpts options) []server.ServerOption {
 	for indexName, mapping := range indicesMapping {
 		indexName := indexName
 		mapping := mapping
-		t.Log("load mapping for index:", indexName)
 		options = append(options,
 			server.WithBuiltInHandler(
 				server.WithMethod(http.MethodGet),
-				server.WithPath(fmt.Sprintf("/_cat/indices/%s*", indexName)),
+				server.WithPathPrefix(fmt.Sprintf("/_cat/indices/%s*", indexName)),
 				server.WithResponse(indexCatResponse(indexName)),
 			))
 

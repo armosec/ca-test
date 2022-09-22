@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"os"
 )
 
 type ServerOption func(opts *serverOptions, isUpdate bool) error
@@ -58,6 +59,14 @@ var WithTLS = func() ServerOption {
 //WithRecord option enables recording of requests to the server to a specific folder and after a specific number of requests
 var WithRequestsRecorder = func(record bool, recordsFolder string, recordAfterReqNum int) ServerOption {
 	return func(o *serverOptions, isUpdate bool) error {
+		if record {
+			if recordsFolder == "" {
+				return fmt.Errorf("recording folder must not be empty if recode is set to true")
+			}
+			if err := os.MkdirAll(recordsFolder, os.ModePerm); err != nil {
+				return fmt.Errorf("failed to create recordings directory %s error: %v", recordsFolder, err)
+			}
+		}
 		o.recordFolder = recordsFolder
 		o.record = record
 		o.recordAfterReqNum = recordAfterReqNum
