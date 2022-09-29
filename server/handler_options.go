@@ -89,6 +89,7 @@ var WithTestRequest = func(t *testing.T, updateExpected bool, expectedRequest []
 		if expectedRequest == nil || expectedRequestFile == "" || t == nil {
 			return fmt.Errorf("test, expected request and expected request file must be provided")
 		}
+		o.t = t
 		o.updateExpected = updateExpected
 		o.expectedRequest = expectedRequest
 		o.expectedRequestFile = expectedRequestFile
