@@ -23,32 +23,21 @@ func SaveExpected(t *testing.T, fileName string, i interface{}) {
 }
 
 func CompareOrUpdate[T any](actual T, expectedBytes []byte, expectedFileName string, t *testing.T, update bool) {
-	if update {
+	if !Equal(t, actual, expectedBytes) && update {
 		SaveExpected(t, expectedFileName, actual)
-	} else {
-		Equal(t, actual, expectedBytes)
+	} else if update {
+		assert.False(t, true, "update expected is true, set to false and rerun test")
 	}
 }
 
-func Equal[T any](t *testing.T, actual T, expectedBytes []byte) {
+func Equal[T any](t *testing.T, actual T, expectedBytes []byte) bool {
 	var expected T
 	err := json.Unmarshal(expectedBytes, &expected)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, actual)
+	return assert.Equal(t, expected, actual)
 }
 
 func DeepEqualOrUpdate(t *testing.T, actualBytes, expectedBytes []byte, expectedFileName string, update bool) {
-	if update {
-		var actual interface{}
-		err := json.Unmarshal(actualBytes, &actual)
-		assert.NoError(t, err)
-		SaveExpected(t, expectedFileName, actual)
-	} else {
-		DeepEqual(t, actualBytes, expectedBytes)
-	}
-}
-
-func DeepEqual(t *testing.T, actualBytes, expectedBytes []byte) {
 	var actual, expected interface{}
 	err := json.Unmarshal(actualBytes, &actual)
 	assert.NoError(t, err)
@@ -63,7 +52,18 @@ func DeepEqual(t *testing.T, actualBytes, expectedBytes []byte) {
 		return true
 	})
 	diff := cmp.Diff(expected, actual, sortSlices)
-	assert.Empty(t, diff, "actual compare with expected should not have diffs")
+	if update {
+		if diff != "" {
+			var actual interface{}
+			err := json.Unmarshal(actualBytes, &actual)
+			assert.NoError(t, err)
+			SaveExpected(t, expectedFileName, actual)
+		} else {
+			assert.False(t, true, "update expected is true, set to false and rerun test")
+		}
+	} else {
+		assert.Empty(t, diff, "actual compare with expected should not have diffs")
+	}
 }
 
 //TODO improve this compare - works for Elastic response
