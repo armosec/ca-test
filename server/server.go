@@ -144,8 +144,16 @@ func (ts *mockTestingServer) mainHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (ts *mockTestingServer) recordRequest(r *http.Request, reqBody string, handlersCount int) {
+	if ts.options.recordOnlyUnhandled && handlersCount > 0 {
+		return
+	}
+
+	var iBody interface{}
+	json.Unmarshal([]byte(reqBody), &iBody)
+
 	record := struct {
 		Body          string              `json:"body,omitempty"`
+		BodyObj       interface{}         `json:"bodyObj,omitempty"`
 		RequestNumber int                 `json:"req_num,omitempty"`
 		Headers       map[string][]string `json:"headers,omitempty"`
 		URL           string              `json:"url,omitempty"`
@@ -156,10 +164,11 @@ func (ts *mockTestingServer) recordRequest(r *http.Request, reqBody string, hand
 		URL:           r.URL.String(),
 		Method:        r.Method,
 		Body:          reqBody,
+		BodyObj:       iBody,
 		RequestNumber: ts.reqCount,
 		HandlersCount: handlersCount,
 	}
-	reqBytes, _ := json.MarshalIndent(&record, "", " ")
+	reqBytes, _ := json.MarshalIndent(&record, "", "    ")
 	fileName := fmt.Sprintf("%s/request_%d.json", ts.options.recordFolder, ts.reqCount)
 	_ = ioutil.WriteFile(fileName, reqBytes, 0644)
 }

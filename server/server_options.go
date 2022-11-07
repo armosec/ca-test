@@ -57,7 +57,7 @@ var WithTLS = func() ServerOption {
 }
 
 //WithRecord option enables recording of requests to the server to a specific folder and after a specific number of requests
-var WithRequestsRecorder = func(record bool, recordsFolder string, recordAfterReqNum int) ServerOption {
+var WithRequestsRecorder = func(record bool, recordsFolder string, recordAfterReqNum int, recordOnlyUnhandled bool) ServerOption {
 	return func(o *serverOptions, isUpdate bool) error {
 		if record {
 			if recordsFolder == "" {
@@ -70,6 +70,7 @@ var WithRequestsRecorder = func(record bool, recordsFolder string, recordAfterRe
 		o.recordFolder = recordsFolder
 		o.record = record
 		o.recordAfterReqNum = recordAfterReqNum
+		o.recordOnlyUnhandled = recordOnlyUnhandled
 		return nil
 	}
 }
@@ -81,6 +82,7 @@ type serverOptions struct {
 	recordFolder           string
 	recordAfterReqNum      int
 	record                 bool
+	recordOnlyUnhandled    bool
 	headers                map[string]string
 	defaultRequestHandlers []serverRequestHandler
 }

@@ -41,6 +41,10 @@ func (h *serverRequestHandler) shouldHandle(r *http.Request, reqCount int) bool 
 	if h.options.reqNum != 0 && h.options.reqNum != reqCount {
 		return false
 	}
+	//if handler is configured with responses array and served all responses, return false
+	if h.options.responses != nil && len(h.options.responses) == 0 {
+		return false
+	}
 	return true
 }
 

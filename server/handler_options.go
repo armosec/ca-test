@@ -56,10 +56,20 @@ var WithPathSuffix = func(pathSuffix string) RequestHandlerOption {
 //WithResponse option sets the response for the handler
 var WithResponse = func(response []byte) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
-		if len(response) != 0 && o.handler != nil {
-			return fmt.Errorf("response can't be set with handler")
+		if len(response) != 0 && (o.handler != nil || len(o.responses) != 0) {
+			return fmt.Errorf("response can't be set with handler or with responses array")
 		}
 		o.response = response
+		return nil
+	}
+}
+
+var WithResponses = func(responses [][]byte) RequestHandlerOption {
+	return func(o *requestHandlerOptions) error {
+		if len(responses) != 0 && (o.handler != nil || len(o.response) != 0) {
+			return fmt.Errorf("responses can't be set with handler or with fixed response")
+		}
+		o.responses = responses
 		return nil
 	}
 }
@@ -101,6 +111,7 @@ type requestHandlerOptions struct {
 	method              string
 	path                string
 	response            []byte
+	responses           [][]byte
 	expectedRequest     []byte
 	expectedRequestFile string
 	updateExpected      bool
@@ -130,6 +141,12 @@ func (o *requestHandlerOptions) getOrCreateHandler() RequestHandler {
 		}
 		if len(o.response) != 0 {
 			w.Write(o.response)
+		}
+		if len(o.responses) != 0 {
+			//pop the next response
+			var response []byte
+			response, o.responses = o.responses[0], o.responses[1:]
+			w.Write(response)
 		}
 	}
 }
