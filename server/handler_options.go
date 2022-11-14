@@ -96,8 +96,12 @@ var WithRequestNumber = func(reqNum int) RequestHandlerOption {
 //WithUpdateExpected option sets the update expected flag for the handler
 var WithTestRequest = func(t *testing.T, updateExpected bool, expectedRequest []byte, expectedRequestFile string) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
-		if expectedRequest == nil || expectedRequestFile == "" || t == nil {
-			return fmt.Errorf("test, expected request and expected request file must be provided")
+		if expectedRequest == nil || t == nil {
+			return fmt.Errorf("test, expected request must be provided")
+		}
+		if updateExpected && expectedRequestFile == "" {
+			return fmt.Errorf("expectedRequestFile must be provided when update expected is true")
+
 		}
 		o.t = t
 		o.updateExpected = updateExpected
