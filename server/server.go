@@ -134,6 +134,10 @@ func (ts *mockTestingServer) mainHandler(w http.ResponseWriter, r *http.Request)
 	for header, value := range ts.options.headers {
 		w.Header().Set(header, value)
 	}
+	middleware := ts.getMiddleware(r)
+	for _, m := range middleware {
+		m(w, r, reqBody)
+	}
 	handlers := ts.getRequestHandlers(r)
 	for _, handler := range handlers {
 		handler(w, r, reqBody)
@@ -171,6 +175,23 @@ func (ts *mockTestingServer) recordRequest(r *http.Request, reqBody string, hand
 	reqBytes, _ := json.MarshalIndent(&record, "", "    ")
 	fileName := fmt.Sprintf("%s/request_%d.json", ts.options.recordFolder, ts.reqCount)
 	_ = ioutil.WriteFile(fileName, reqBytes, 0644)
+}
+
+func (ts *mockTestingServer) getMiddleware(r *http.Request) []RequestHandler {
+	middlewareHandlers := []serverRequestHandler{}
+	for _, handler := range ts.options.middleware {
+		if handler.shouldHandle(r, ts.reqCount) {
+			middlewareHandlers = append(middlewareHandlers, handler)
+		}
+	}
+	sort.Slice(middlewareHandlers, func(i, j int) bool {
+		return middlewareHandlers[i].handleBefore(middlewareHandlers[j])
+	})
+	handlers := []RequestHandler{}
+	for _, handler := range middlewareHandlers {
+		handlers = append(handlers, handler.handler)
+	}
+	return handlers
 }
 
 func (ts *mockTestingServer) getRequestHandlers(r *http.Request) []RequestHandler {
