@@ -9,8 +9,8 @@ type ServerOption func(opts *serverOptions, isUpdate bool) error
 
 //Options
 
-//WithBuiltInHandler option adds built in handler to the server.
-//Built-in handlers are fixed and will not be removed when ResetHandlers is called
+// WithBuiltInHandler option adds built in handler to the server.
+// Built-in handlers are fixed and will not be removed when ResetHandlers is called
 var WithBuiltInHandler = func(opts ...RequestHandlerOption) ServerOption {
 	return func(o *serverOptions, isUpdate bool) error {
 		if handler, err := newRequestHandler(opts...); err != nil {
@@ -22,7 +22,21 @@ var WithBuiltInHandler = func(opts ...RequestHandlerOption) ServerOption {
 	}
 }
 
-//WithHeaders option adds headers to each response
+// WithBuiltInMiddlewareHandler option adds built in handler to the server.
+// unlike handles middleware are not counted when checking if a request was handled
+// Built-in middleware are fixed and will not be removed when ResetHandlers is called
+var WithBuiltInMiddlewareHandler = func(opts ...RequestHandlerOption) ServerOption {
+	return func(o *serverOptions, isUpdate bool) error {
+		if handler, err := newRequestHandler(opts...); err != nil {
+			return err
+		} else {
+			o.middleware = append(o.middleware, *handler)
+		}
+		return nil
+	}
+}
+
+// WithHeaders option adds headers to each response
 var WithHeaders = func(headers map[string]string) ServerOption {
 	return func(o *serverOptions, isUpdate bool) error {
 		for k, v := range headers {
@@ -32,8 +46,8 @@ var WithHeaders = func(headers map[string]string) ServerOption {
 	}
 }
 
-//WithPort option sets port for the server, if not specified the server will pick the next available port
-//This option cannot be changed after the server is created
+// WithPort option sets port for the server, if not specified the server will pick the next available port
+// This option cannot be changed after the server is created
 var WithPort = func(port int) ServerOption {
 	return func(o *serverOptions, isUpdate bool) error {
 		if isUpdate {
@@ -44,8 +58,8 @@ var WithPort = func(port int) ServerOption {
 	}
 }
 
-//WithTLS option enables TLS for the server
-//This option cannot be changed after the server is created
+// WithTLS option enables TLS for the server
+// This option cannot be changed after the server is created
 var WithTLS = func() ServerOption {
 	return func(o *serverOptions, isUpdate bool) error {
 		if isUpdate {
@@ -56,7 +70,7 @@ var WithTLS = func() ServerOption {
 	}
 }
 
-//WithRecord option enables recording of requests to the server to a specific folder and after a specific number of requests
+// WithRecord option enables recording of requests to the server to a specific folder and after a specific number of requests
 var WithRequestsRecorder = func(record bool, recordsFolder string, recordAfterReqNum int, recordOnlyUnhandled bool) ServerOption {
 	return func(o *serverOptions, isUpdate bool) error {
 		if record {
@@ -75,7 +89,7 @@ var WithRequestsRecorder = func(record bool, recordsFolder string, recordAfterRe
 	}
 }
 
-//Options for test server
+// Options for test server
 type serverOptions struct {
 	port                   int
 	tls                    bool //
@@ -85,6 +99,7 @@ type serverOptions struct {
 	recordOnlyUnhandled    bool
 	headers                map[string]string
 	defaultRequestHandlers []serverRequestHandler
+	middleware             []serverRequestHandler
 }
 
 func makeServerOptions(opts ...ServerOption) (*serverOptions, error) {
@@ -92,6 +107,7 @@ func makeServerOptions(opts ...ServerOption) (*serverOptions, error) {
 		port:                   0,
 		tls:                    false,
 		defaultRequestHandlers: []serverRequestHandler{},
+		middleware:             []serverRequestHandler{},
 		headers:                map[string]string{},
 		record:                 false,
 		recordFolder:           "",
