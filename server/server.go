@@ -17,6 +17,10 @@ const localHost = "127.0.0.1"
 type TestServer interface {
 	//get server URL and port
 	GetURL() string
+	//get server port
+	GetPort() int
+	//get server port as string
+	GetPortAsString() string
 	//get the current number of requests received by the server
 	GetRequestCount() int
 	//SetOption sets a new option to the server, error is return if the option cannot be modified
@@ -58,6 +62,14 @@ type mockTestingServer struct {
 
 func (ts *mockTestingServer) GetURL() string {
 	return fmt.Sprintf("http://%s:%d", localHost, ts.options.port)
+}
+
+func (ts *mockTestingServer) GetPort() int {
+	return ts.options.port
+}
+
+func (ts *mockTestingServer) GetPortAsString() string {
+	return fmt.Sprintf("%d", ts.options.port)
 }
 
 func (ts *mockTestingServer) SetOption(opt ServerOption) error {
