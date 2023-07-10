@@ -22,6 +22,24 @@ func SaveExpected(t *testing.T, fileName string, i interface{}) {
 	assert.False(t, true, "update expected is true, set to false and rerun test")
 }
 
+func CompareAndUpdate[T any](t *testing.T, actual T, expectedBytes []byte, expectedFileName string, update bool, compareOptions ...cmp.Option) {
+	expected := loadJson[T](expectedBytes)
+	diff := cmp.Diff(expected, actual, compareOptions...)
+	assert.Empty(t, diff, "expected to have no diff")
+	if update && diff != "" {
+		SaveExpected(t, expectedFileName, actual)
+	}
+	assert.False(t, update, "update expected is true, set to false and rerun test")
+}
+
+func loadJson[T any](jsonBytes []byte) T {
+	var obj T
+	if err := json.Unmarshal(jsonBytes, &obj); err != nil {
+		panic(err)
+	}
+	return obj
+}
+
 func CompareOrUpdate[T any](actual T, expectedBytes []byte, expectedFileName string, t *testing.T, update bool) {
 	if !Equal(t, actual, expectedBytes) && update {
 		SaveExpected(t, expectedFileName, actual)
