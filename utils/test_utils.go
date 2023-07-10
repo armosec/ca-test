@@ -2,7 +2,7 @@ package utils
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -14,7 +14,7 @@ import (
 
 func SaveExpected(t *testing.T, fileName string, i interface{}) {
 	data, _ := json.MarshalIndent(i, "", "    ")
-	err := ioutil.WriteFile(fileName, data, 0644)
+	err := os.WriteFile(fileName, data, 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -40,6 +40,7 @@ func loadJson[T any](jsonBytes []byte) T {
 	return obj
 }
 
+// deprecated use CompareAndUpdate
 func CompareOrUpdate[T any](actual T, expectedBytes []byte, expectedFileName string, t *testing.T, update bool) {
 	if !Equal(t, actual, expectedBytes) && update {
 		SaveExpected(t, expectedFileName, actual)
@@ -48,6 +49,7 @@ func CompareOrUpdate[T any](actual T, expectedBytes []byte, expectedFileName str
 	}
 }
 
+// deprecated use CompareAndUpdate
 func Equal[T any](t *testing.T, actual T, expectedBytes []byte) bool {
 	var expected T
 	err := json.Unmarshal(expectedBytes, &expected)
@@ -55,6 +57,7 @@ func Equal[T any](t *testing.T, actual T, expectedBytes []byte) bool {
 	return assert.Equal(t, expected, actual)
 }
 
+// deprecated use CompareAndUpdate
 func DeepEqualOrUpdate(t *testing.T, actualBytes, expectedBytes []byte, expectedFileName string, update bool) {
 	var actual, expected interface{}
 	err := json.Unmarshal(actualBytes, &actual)
