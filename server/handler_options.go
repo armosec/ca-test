@@ -12,7 +12,7 @@ type RequestHandler func(w http.ResponseWriter, r *http.Request, reqBody string)
 
 type RequestHandlerOption func(opts *requestHandlerOptions) error
 
-//WithMethod option sets the method for the handler
+// WithMethod option sets the method for the handler
 var WithMethod = func(method string) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
 		o.method = method
@@ -20,7 +20,7 @@ var WithMethod = func(method string) RequestHandlerOption {
 	}
 }
 
-//WithPath option sets the path for the handler
+// WithPath option sets the path for the handler
 var WithPath = func(path string) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
 		if path != "" && (o.pathPrefix != "" || o.pathSuffix != "") {
@@ -31,7 +31,7 @@ var WithPath = func(path string) RequestHandlerOption {
 	}
 }
 
-//WithPathPrefix option sets the path prefix for the handler
+// WithPathPrefix option sets the path prefix for the handler
 var WithPathPrefix = func(pathPrefix string) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
 		if pathPrefix != "" && o.path != "" {
@@ -42,7 +42,7 @@ var WithPathPrefix = func(pathPrefix string) RequestHandlerOption {
 	}
 }
 
-//WithPathSuffix option sets the path suffix for the handler
+// WithPathSuffix option sets the path suffix for the handler
 var WithPathSuffix = func(pathSuffix string) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
 		if pathSuffix != "" && o.path != "" {
@@ -53,7 +53,7 @@ var WithPathSuffix = func(pathSuffix string) RequestHandlerOption {
 	}
 }
 
-//WithResponse option sets the response for the handler
+// WithResponse option sets the response for the handler
 var WithResponse = func(response []byte) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
 		if len(response) != 0 && (o.handler != nil || len(o.responses) != 0) {
@@ -74,7 +74,7 @@ var WithResponses = func(responses [][]byte) RequestHandlerOption {
 	}
 }
 
-//WithHandler option sets the handler for the handler
+// WithHandler option sets the handler for the handler
 var WithHandler = func(handler RequestHandler) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
 		if handler != nil && len(o.response) != 0 {
@@ -85,7 +85,7 @@ var WithHandler = func(handler RequestHandler) RequestHandlerOption {
 	}
 }
 
-//WithRequestNumber option sets the request number for the handler
+// WithRequestNumber option sets the request number for the handler
 var WithRequestNumber = func(reqNum int) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
 		o.reqNum = reqNum
@@ -93,8 +93,26 @@ var WithRequestNumber = func(reqNum int) RequestHandlerOption {
 	}
 }
 
-//WithUpdateExpected option sets the update expected flag for the handler
+// Deprecated: Use WithTestRequestV1 - keep only for elastic tests
 var WithTestRequest = func(t *testing.T, updateExpected bool, expectedRequest []byte, expectedRequestFile string) RequestHandlerOption {
+	return func(o *requestHandlerOptions) error {
+		if expectedRequest == nil || t == nil {
+			return fmt.Errorf("test, expected request must be provided")
+		}
+		if updateExpected && expectedRequestFile == "" {
+			return fmt.Errorf("expectedRequestFile must be provided when update expected is true")
+
+		}
+		o.t = t
+		o.updateExpected = updateExpected
+		o.expectedRequest = expectedRequest
+		o.expectedRequestFile = expectedRequestFile
+		o.deprecatedTestResponse = true
+		return nil
+	}
+}
+
+var WithTestRequestV1 = func(t *testing.T, updateExpected bool, expectedRequest []byte, expectedRequestFile string) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
 		if expectedRequest == nil || t == nil {
 			return fmt.Errorf("test, expected request must be provided")
@@ -112,18 +130,19 @@ var WithTestRequest = func(t *testing.T, updateExpected bool, expectedRequest []
 }
 
 type requestHandlerOptions struct {
-	method              string
-	path                string
-	response            []byte
-	responses           [][]byte
-	expectedRequest     []byte
-	expectedRequestFile string
-	updateExpected      bool
-	reqNum              int
-	pathPrefix          string
-	pathSuffix          string
-	handler             RequestHandler
-	t                   *testing.T
+	method                 string
+	path                   string
+	response               []byte
+	responses              [][]byte
+	expectedRequest        []byte
+	expectedRequestFile    string
+	updateExpected         bool
+	reqNum                 int
+	pathPrefix             string
+	pathSuffix             string
+	handler                RequestHandler
+	t                      *testing.T
+	deprecatedTestResponse bool
 }
 
 func (o *requestHandlerOptions) validate() error {
@@ -140,8 +159,10 @@ func (o *requestHandlerOptions) getOrCreateHandler() RequestHandler {
 		return o.handler
 	}
 	return func(w http.ResponseWriter, r *http.Request, reqBody string) {
-		if len(o.expectedRequest) != 0 {
+		if o.deprecatedTestResponse && len(o.expectedRequest) != 0 {
 			utils.DeepEqualOrUpdate(o.t, []byte(reqBody), o.expectedRequest, o.expectedRequestFile, o.updateExpected)
+		} else if len(o.expectedRequest) != 0 {
+			utils.CompareAndUpdate(o.t, []byte(reqBody), o.expectedRequest, o.expectedRequestFile, o.updateExpected)
 		}
 		if len(o.response) != 0 {
 			w.Write(o.response)
