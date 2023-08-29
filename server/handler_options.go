@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/armosec/ca-test/utils"
+	"github.com/google/go-cmp/cmp"
 )
 
 type RequestHandler func(w http.ResponseWriter, r *http.Request, reqBody string)
@@ -112,7 +113,7 @@ var WithTestRequest = func(t *testing.T, updateExpected bool, expectedRequest []
 	}
 }
 
-var WithTestRequestV1 = func(t *testing.T, updateExpected bool, expectedRequest []byte, expectedRequestFile string) RequestHandlerOption {
+var WithTestRequestV1 = func(t *testing.T, updateExpected bool, expectedRequest []byte, expectedRequestFile string, compareOptions ...cmp.Option) RequestHandlerOption {
 	return func(o *requestHandlerOptions) error {
 		if expectedRequest == nil || t == nil {
 			return fmt.Errorf("test, expected request must be provided")
@@ -125,6 +126,7 @@ var WithTestRequestV1 = func(t *testing.T, updateExpected bool, expectedRequest 
 		o.updateExpected = updateExpected
 		o.expectedRequest = expectedRequest
 		o.expectedRequestFile = expectedRequestFile
+		o.requestCompareOptions = compareOptions
 		return nil
 	}
 }
@@ -135,6 +137,7 @@ type requestHandlerOptions struct {
 	response               []byte
 	responses              [][]byte
 	expectedRequest        []byte
+	requestCompareOptions  []cmp.Option
 	expectedRequestFile    string
 	updateExpected         bool
 	reqNum                 int
@@ -162,7 +165,7 @@ func (o *requestHandlerOptions) getOrCreateHandler() RequestHandler {
 		if o.deprecatedTestResponse && len(o.expectedRequest) != 0 {
 			utils.DeepEqualOrUpdate(o.t, []byte(reqBody), o.expectedRequest, o.expectedRequestFile, o.updateExpected)
 		} else if len(o.expectedRequest) != 0 {
-			utils.CompareAndUpdate(o.t, []byte(reqBody), o.expectedRequest, o.expectedRequestFile, o.updateExpected)
+			utils.CompareAndUpdate(o.t, []byte(reqBody), o.expectedRequest, o.expectedRequestFile, o.updateExpected, o.requestCompareOptions...)
 		}
 		if len(o.response) != 0 {
 			w.Write(o.response)
